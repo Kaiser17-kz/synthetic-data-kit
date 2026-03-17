@@ -6,8 +6,8 @@ url = "http://localhost:11434/api/chat"
 
 # Define the payload (your input prompt)
 payload = {
-    "model": "mistral",  # Replace with the model name you're using
-    "messages": [{"role": "user", "content": "What is Python?"}]
+    "model": "llama2",  # Replace with the model name you're using
+    "messages": [{"role": "user", "content": "How to save princess peach?"}]
 }
 
 # Send the HTTP POST request with streaming enabled
@@ -30,3 +30,5 @@ if response.status_code == 200:
 else:
     print(f"Error: {response.status_code}")
     print(response.text)
+
+
