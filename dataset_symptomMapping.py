@@ -1,62 +1,71 @@
 import pandas as pd
-import json
+import random
 
-# -----------------------------
-# Step 1: Load symptoms dataset
-# -----------------------------
-symptoms_df = pd.read_csv("medquad.csv")  # Replace with your file path
+#########################################################
+## LOAD CLEANED SYMPTOMS DATASET
+#########################################################
 
-# -----------------------------
-# Step 2: Map focus_area to specialist
-# -----------------------------
-# Update this mapping with all relevant focus areas
-specialist_map = {
-    "Glaucoma": "ophthalmology",
-    "Diabetes": "endocrinology",
-    "Heart Disease": "cardiology",
-    "Hypertension": "cardiology",
-    "Asthma": "pulmonology",
-    "Skin Conditions": "dermatology",
-    "Bone Fracture": "orthopaedics",
-    "Back Pain": "orthopaedics",
-    "Mental Health": "psychiatry",
-    "Tooth Pain": "dentist",
-    # Add more as needed
-}
+df = pd.read_csv(r"cleaned_symptoms_dataset.csv")
 
-# Create a specialist column
-symptoms_df["specialist"] = symptoms_df["focus_area"].map(specialist_map)
+#########################################################
+## CLEAN DATA
+#########################################################
 
-# Drop rows where mapping failed
-symptoms_df = symptoms_df.dropna(subset=["specialist"])
+df["Symptoms"] = df["Symptoms"].str.lower().str.strip()
+df["Disease"] = df["Disease"].str.lower().str.strip()
+df["Speciality"] = df["Speciality"].str.lower().str.strip()
 
-# -----------------------------
-# Step 3: Prepare Alpaca-style dataset
-# -----------------------------
-# Rename columns for Alpaca-style prompts
-symptoms_df = symptoms_df.rename(columns={
-    "question": "instruction",
-    "answer": "output"
-})
-symptoms_df["input"] = ""  # optional extra input
+#########################################################
+## INSTRUCTIONS (better for LLM training)
+#########################################################
 
-# -----------------------------
-# Step 4: Save as JSONL for fine-tuning
-# -----------------------------
-output_file = "medquad_alpaca.jsonl"
-with open(output_file, "w", encoding="utf-8") as f:
-    for _, row in symptoms_df.iterrows():
-        json_record = {
-            "instruction": row["instruction"],
-            "input": row["input"],
-            "output": row["output"]
-        }
-        f.write(json.dumps(json_record, ensure_ascii=False) + "\n")
+instructions_list = [
+    "Identify the most likely disease and recommend the appropriate medical specialist.",
+    "Based on the symptoms, determine the disease and suggest the correct specialist.",
+    "Analyze the symptoms and provide the diagnosis along with the appropriate specialist.",
+    "Given the symptoms, what disease is likely and which specialist should be consulted?"
+]
 
-print(f"Alpaca-style training dataset saved: {output_file}")
-print(f"Total records: {len(symptoms_df)}")
+#########################################################
+## GENERATE ALPACA DATASET
+#########################################################
 
-# -----------------------------
-# Optional: Preview first 2 entries
-# -----------------------------
-print(symptoms_df[["instruction", "output", "specialist"]].head(2))
+target_rows = 1000
+data = []
+
+# Repeat until we reach 2000 rows
+while len(data) < target_rows:
+    row = df.sample(1).iloc[0]  # sample with replacement
+    
+    symptoms = row["Symptoms"]
+    disease = row["Disease"]
+    specialist = row["Speciality"]
+    
+    # Random instruction
+    instruction = random.choice(instructions_list)
+    
+    # Input
+    input_text = f"Symptoms: {symptoms}"
+    
+    # Output
+    output_text = (
+        f"Disease: {disease}\n"
+        f"Speciality: {specialist}"
+    )
+    
+    data.append({
+        "instruction": instruction.strip(),
+        "input": input_text.strip(),
+        "output": output_text.strip()
+    })
+
+#########################################################
+## SAVE DATASET
+#########################################################
+
+alpaca_df = pd.DataFrame(data)
+
+alpaca_df.to_csv("alpaca_symptoms_dataset_2000.csv", index=False)
+
+print(alpaca_df.head())
+print(f"\n✅ Alpaca-format dataset with {len(alpaca_df)} rows ready for training!")

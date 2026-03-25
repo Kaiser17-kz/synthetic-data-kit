@@ -6,7 +6,7 @@ url = "http://localhost:11434/api/chat"
 
 # Define the payload (your input prompt)
 payload = {
-    "model": "llama2",  # Replace with the model name you're using
+    "model": "llama3.1:8B",  # Replace with the model name you're using
     "messages": [{"role": "user", "content": "How to save princess peach?"}]
 }
 
